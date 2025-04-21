@@ -6,12 +6,13 @@ import ru.practicum.shareit.item.model.Item;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Repository
 public class ItemRepositoryInMemoryImpl implements ItemRepository {
 
     private final Map<Long, Item> items = new ConcurrentHashMap<>();
-    private static Long id = 0L;
+    private static final AtomicLong id = new AtomicLong(0L);
 
     @Override
     public List<Item> findAll() {
@@ -44,10 +45,10 @@ public class ItemRepositoryInMemoryImpl implements ItemRepository {
         if (!Objects.equals(old.getOwner(), item.getOwner())) {
             throw new ValidationException("Can't change item's userId");
         }
-        if (item.getName() != null && !item.getName().isBlank()) {
+        if (item.getName() != null) {
             old.setName(item.getName());
         }
-        if (item.getDescription() != null && !item.getDescription().isBlank()) {
+        if (item.getDescription() != null) {
             old.setDescription(item.getDescription());
         }
         if (item.getAvailable() != null) {
@@ -71,6 +72,6 @@ public class ItemRepositoryInMemoryImpl implements ItemRepository {
     }
 
     private long nextId() {
-        return ++id;
+        return id.incrementAndGet();
     }
 }

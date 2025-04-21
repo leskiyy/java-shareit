@@ -4,7 +4,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.user.dto.UserCreateDto;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserUpdateDto;
 
 import java.util.List;
 
@@ -27,13 +29,13 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto createUser(@RequestBody @Valid UserDto user) {
+    public UserDto createUser(@RequestBody @Valid UserCreateDto user) {
         return service.saveUser(user);
     }
 
     @PatchMapping("/{id}")
-    public UserDto updateUser(@RequestBody UserDto user, @PathVariable long id) {
-        return service.updateUser(user.setId(id));
+    public UserDto updateUser(@RequestBody @Valid UserUpdateDto user, @PathVariable long id) {
+        return service.updateUser(user, id);
     }
 
     @DeleteMapping("/{id}")

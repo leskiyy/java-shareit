@@ -5,7 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemUpdateDto;
 
 import java.util.List;
 
@@ -19,16 +21,16 @@ public class ItemController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ItemDto createItem(@RequestBody @Valid ItemDto itemDto,
+    public ItemDto createItem(@RequestBody @Valid ItemCreateDto itemDto,
                               @RequestHeader("X-Sharer-User-Id") long userId) {
         return service.createItem(itemDto, userId);
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDto updateItem(@RequestBody ItemDto itemDto,
+    public ItemDto updateItem(@RequestBody @Valid ItemUpdateDto itemDto,
                               @RequestHeader("X-Sharer-User-Id") long userId,
                               @PathVariable long itemId) {
-        return service.update(itemDto.setId(itemId), userId);
+        return service.update(itemDto, userId, itemId);
     }
 
     @GetMapping("/{id}")
@@ -43,7 +45,7 @@ public class ItemController {
     }
 
     @GetMapping("/search")
-    public List<ItemDto> searchItemByText(@RequestParam String text,
+    public List<ItemDto> searchItemByText(@RequestParam(required = false) String text,
                                           @RequestHeader("X-Sharer-User-Id") long userId) {
         return service.searchByText(text, userId);
     }

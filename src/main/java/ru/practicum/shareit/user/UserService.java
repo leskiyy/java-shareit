@@ -3,7 +3,9 @@ package ru.practicum.shareit.user;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.user.dto.UserCreateDto;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.dto.UserUpdateDto;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
@@ -27,13 +29,13 @@ public class UserService {
         return mapToUserDto(user);
     }
 
-    public UserDto saveUser(UserDto user) {
+    public UserDto saveUser(UserCreateDto user) {
         User saved = repository.save(mapToUser(user));
         return mapToUserDto(saved);
     }
 
-    public UserDto updateUser(UserDto user) {
-        User updated = repository.update(mapToUser(user));
+    public UserDto updateUser(UserUpdateDto user, long id) {
+        User updated = repository.update(mapToUser(user, id));
         return mapToUserDto(updated);
     }
 

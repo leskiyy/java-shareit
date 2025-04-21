@@ -13,7 +13,7 @@ public class ErrorHandler {
     @ExceptionHandler
     public ResponseEntity<Map<String, String>> handleValidationException(final ValidationException e) {
         return ResponseEntity
-                .status(HttpStatus.CONFLICT)
+                .status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", e.getMessage()));
 
     }
@@ -22,6 +22,13 @@ public class ErrorHandler {
     public ResponseEntity<Map<String, String>> handleNotFoundException(final NotFoundException e) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", e.getMessage()));
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<Map<String, String>> handleEmailConflictException(final EmailConflictException e) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(Map.of("error", e.getMessage()));
     }
 

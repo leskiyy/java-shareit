@@ -1,19 +1,20 @@
 package ru.practicum.shareit.user;
 
 import org.springframework.stereotype.Repository;
+import ru.practicum.shareit.exception.EmailConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Repository
 public class UserRepositoryInMemoryImpl implements UserRepository {
 
     private final Map<Long, User> users = new ConcurrentHashMap<>();
     private final Set<String> emails = ConcurrentHashMap.newKeySet();
-    private static Long id = 0L;
+    private static final AtomicLong id = new AtomicLong(0);
 
     @Override
     public List<User> findAll() {
@@ -28,7 +29,7 @@ public class UserRepositoryInMemoryImpl implements UserRepository {
     @Override
     public User save(User user) {
         if (emails.contains(user.getEmail())) {
-            throw new ValidationException(String.format("User with email %s already exists", user.getEmail()));
+            throw new EmailConflictException(String.format("User with email %s already exists", user.getEmail()));
         }
         Long id = nextId();
         user.setId(id);
@@ -47,7 +48,7 @@ public class UserRepositoryInMemoryImpl implements UserRepository {
         if (user.getEmail() != null) {
             if (!old.getEmail().equals(user.getEmail()) &&
                 emails.contains(user.getEmail())) {
-                throw new ValidationException(String.format("User with email %s already exists", user.getEmail()));
+                throw new EmailConflictException(String.format("User with email %s already exists", user.getEmail()));
             }
             old.setEmail(user.getEmail());
         }
@@ -74,6 +75,6 @@ public class UserRepositoryInMemoryImpl implements UserRepository {
     }
 
     private long nextId() {
-        return ++id;
+        return id.incrementAndGet();
     }
 }

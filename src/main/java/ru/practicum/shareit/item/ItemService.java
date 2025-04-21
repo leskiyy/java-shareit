@@ -3,7 +3,9 @@ package ru.practicum.shareit.item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.UserRepositoryInMemoryImpl;
 
@@ -20,16 +22,16 @@ public class ItemService {
     private final ItemRepositoryInMemoryImpl itemRepository;
     private final UserRepositoryInMemoryImpl userRepository;
 
-    public ItemDto createItem(ItemDto itemDto, long userId) {
+    public ItemDto createItem(ItemCreateDto itemDto, long userId) {
         validateUserByUserId(userId);
         Item saved = itemRepository.save(mapToItem(itemDto, userId));
 
         return mapToItemDto(saved);
     }
 
-    public ItemDto update(ItemDto itemDto, long userId) {
+    public ItemDto update(ItemUpdateDto itemDto, long userId, long itemId) {
         validateUserByUserId(userId);
-        Item updated = itemRepository.update(mapToItem(itemDto, userId));
+        Item updated = itemRepository.update(mapToItem(itemDto, userId, itemId));
         return mapToItemDto(updated);
     }
 
