@@ -1,15 +1,15 @@
-package ru.practicum.shareit.item.model;
+package ru.practicum.shareit.item.dto;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+import ru.practicum.shareit.validator.NotBlankCouldBeNull;
 
 @Data
 @Accessors(chain = true)
-public class Item {
-    private Long id;
+public class ItemUpdateDto {
+    @NotBlankCouldBeNull
     private String name;
+    @NotBlankCouldBeNull
     private String description;
     private Boolean available;
-    private Long owner;
-    private Long request;
 }
