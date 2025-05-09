@@ -1,35 +1,71 @@
 package ru.practicum.shareit.item;
 
-import lombok.experimental.UtilityClass;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
+import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingMapper;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemUpdateDto;
-import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.item.entity.Comment;
+import ru.practicum.shareit.item.entity.Item;
+import ru.practicum.shareit.user.entity.User;
 
-@UtilityClass
-public class ItemMapper {
-    Item mapToItem(ItemCreateDto dto, long userId) {
-        return new Item()
-                .setName(dto.getName())
-                .setDescription(dto.getDescription())
-                .setAvailable(dto.getAvailable())
-                .setOwner(userId);
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Mapper(componentModel = "spring", uses = BookingMapper.class)
+public abstract class ItemMapper {
+
+    @Autowired
+    protected BookingMapper bookingMapper;
+
+    abstract ItemDto toItemDto(Item item);
+
+    @Mapping(target = "lastBooking", expression = "java(this.getLastBooking(item))")
+    @Mapping(target = "nextBooking", expression = "java(this.getNextBooking(item))")
+    @Mapping(target = "id", source = "item.id")
+    abstract ItemDto toItemDtoForOwner(Item item);
+
+    @Mapping(target = "owner.id", source = "ownerId")
+    abstract Item toItem(ItemCreateDto dto, Long ownerId);
+
+    @Mapping(ignore = true, target = "id")
+    abstract Comment toComment(CommentDto dto, Item item, User author);
+
+    @Mapping(target = "authorName", source = "author.name")
+    abstract CommentDto toCommentDto(Comment comment);
+
+    abstract List<CommentDto> toCommentDtos(List<Comment> comments);
+
+    protected BookingDto getLastBooking(Item item) {
+        List<Booking> bookings = item.getBookings();
+        if (bookings.isEmpty()) {
+            return null;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < bookings.size(); i++) {
+            if (bookings.get(i).getStart().isAfter(now)) {
+                if (i == 0) return null;
+                else return bookingMapper.toBookingDto(bookings.get(i - 1));
+            }
+        }
+        return bookingMapper.toBookingDto(bookings.getLast());
     }
 
-    Item mapToItem(ItemUpdateDto dto, long userId, long itemId) {
-        return new Item()
-                .setId(itemId)
-                .setName(dto.getName())
-                .setDescription(dto.getDescription())
-                .setAvailable(dto.getAvailable())
-                .setOwner(userId);
-    }
-
-    ItemDto mapToItemDto(Item item) {
-        return new ItemDto()
-                .setId(item.getId())
-                .setName(item.getName())
-                .setDescription(item.getDescription())
-                .setAvailable(item.getAvailable());
+    protected BookingDto getNextBooking(Item item) {
+        List<Booking> bookings = item.getBookings();
+        if (bookings.isEmpty()) {
+            return null;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        for (int i = 0; i < bookings.size(); i++) {
+            if (bookings.get(i).getStart().isAfter(now)) {
+                if (i == 0) return bookingMapper.toBookingDto(bookings.get(i));
+            }
+        }
+        return null;
     }
 }
