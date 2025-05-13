@@ -55,7 +55,13 @@ public class BookingService {
         if (booking.getItem().getOwner().getId() != ownerId) {
             throw new ValidationException("User don't own item to approve booking");
         }
-        booking.setStatus(isApproved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
+        if (isApproved && booking.getStatus() == BookingStatus.APPROVED) {
+            throw new ValidationException("Booking is already approved");
+        } else if (!isApproved && booking.getStatus() == BookingStatus.REJECTED) {
+            throw new ValidationException("Booking is already rejected");
+        } else {
+            booking.setStatus(isApproved ? BookingStatus.APPROVED : BookingStatus.REJECTED);
+        }
         Booking saved = bookingRepository.save(booking);
         return mapper.toBookingDto(saved);
     }
@@ -82,7 +88,7 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public List<BookingDto> getBookingsByItemOwnerId(long ownerId, State state) {
-        if (userRepository.existsById(ownerId)) {
+        if (!userRepository.existsById(ownerId)) {
             throw new NotFoundException("There is no user with id=" + ownerId);
         }
         if (itemRepository.findByOwnerId(ownerId).isEmpty()) {
