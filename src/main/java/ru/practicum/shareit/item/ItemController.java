@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemUpdateDto;
@@ -23,31 +24,50 @@ public class ItemController {
     @ResponseStatus(HttpStatus.CREATED)
     public ItemDto createItem(@RequestBody @Valid ItemCreateDto itemDto,
                               @RequestHeader("X-Sharer-User-Id") long userId) {
-        return service.createItem(itemDto, userId);
+        ItemDto created = service.createItem(itemDto, userId);
+        log.info("Successfully created item {}", created);
+        return created;
     }
 
     @PatchMapping("/{itemId}")
     public ItemDto updateItem(@RequestBody @Valid ItemUpdateDto itemDto,
                               @RequestHeader("X-Sharer-User-Id") long userId,
                               @PathVariable long itemId) {
-        return service.update(itemDto, userId, itemId);
+        ItemDto updated = service.update(itemDto, userId, itemId);
+        log.info("Successfully update item {}", updated);
+        return updated;
     }
 
     @GetMapping("/{id}")
     public ItemDto getItemById(@PathVariable long id,
                                @RequestHeader("X-Sharer-User-Id") long userId) {
-        return service.getItemById(id, userId);
+        ItemDto item = service.getItemById(id, userId);
+        log.info("Successfully get item {}", item);
+        return item;
     }
 
     @GetMapping
     public List<ItemDto> getItemsByUserId(@RequestHeader("X-Sharer-User-Id") long userId) {
-        return service.getItemByUserId(userId);
+        List<ItemDto> items = service.getItemByUserId(userId);
+        log.info("Successfully get {} items", items.size());
+        return items;
     }
 
     @GetMapping("/search")
     public List<ItemDto> searchItemByText(@RequestParam(required = false) String text,
                                           @RequestHeader("X-Sharer-User-Id") long userId) {
-        return service.searchByText(text, userId);
+        List<ItemDto> found = service.searchByText(text, userId);
+        log.info("Successfully found {} items", found.size());
+        return found;
+    }
+
+    @PostMapping("/{itemId}/comment")
+    public CommentDto postComment(@RequestBody CommentDto dto,
+                                  @RequestHeader("X-Sharer-User-Id") long userId,
+                                  @PathVariable long itemId) {
+        CommentDto comment = service.createComment(dto, userId, itemId);
+        log.info("Successfully post comment {}", comment);
+        return comment;
     }
 
 }

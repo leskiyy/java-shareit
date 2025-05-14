@@ -2,71 +2,117 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemUpdateDto;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.UserRepositoryInMemoryImpl;
+import ru.practicum.shareit.item.entity.Comment;
+import ru.practicum.shareit.item.entity.Item;
+import ru.practicum.shareit.user.UserRepository;
+import ru.practicum.shareit.user.entity.User;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-
-import static ru.practicum.shareit.item.ItemMapper.*;
 
 @Service
 @RequiredArgsConstructor
 public class ItemService {
 
-    private final ItemRepositoryInMemoryImpl itemRepository;
-    private final UserRepositoryInMemoryImpl userRepository;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
+    private final CommentRepository commentRepository;
+    private final BookingRepository bookingRepository;
+    private final ItemMapper mapper;
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public ItemDto createItem(ItemCreateDto itemDto, long userId) {
-        validateUserByUserId(userId);
-        Item saved = itemRepository.save(mapToItem(itemDto, userId));
-
-        return mapToItemDto(saved);
-    }
-
-    public ItemDto update(ItemUpdateDto itemDto, long userId, long itemId) {
-        validateUserByUserId(userId);
-        Item updated = itemRepository.update(mapToItem(itemDto, userId, itemId));
-        return mapToItemDto(updated);
-    }
-
-    public ItemDto getItemById(long id, long userId) {
-        validateUserByUserId(userId);
-        Optional<Item> optionalItem = itemRepository.findById(id);
-        if (optionalItem.isEmpty()) {
-            throw new NotFoundException("There is no item with id=" + id);
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("There is no user with id=" + userId);
         }
-        Item item = optionalItem.get();
-
-        return mapToItemDto(item);
+        Item saved = itemRepository.save(mapper.toItem(itemDto, userId));
+        return mapper.toItemDto(saved);
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public ItemDto update(ItemUpdateDto itemDto, long userId, long itemId) {
+        Item toUpdate = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("There is no item with id=" + itemId));
+        if (toUpdate.getOwner().getId() != userId) {
+            throw new NotFoundException("Can't change item's owner");
+        }
+        updateNotNullFields(itemDto, toUpdate);
+        itemRepository.save(toUpdate);
+        return mapper.toItemDto(toUpdate);
+    }
+
+    @Transactional(readOnly = true)
+    public ItemDto getItemById(long id, long userId) {
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("There is no item with id=" + id));
+
+        if (item.getOwner().getId() == userId) {
+            return mapper.toItemDtoForOwner(item);
+        } else {
+            return mapper.toItemDto(item);
+        }
+    }
+
+    @Transactional(readOnly = true)
     public List<ItemDto> getItemByUserId(long userId) {
-        validateUserByUserId(userId);
-        return itemRepository.findByUserId(userId).stream()
-                .map(ItemMapper::mapToItemDto)
+
+        return itemRepository.findByOwnerId(userId).stream()
+                .map(mapper::toItemDtoForOwner)
                 .toList();
     }
 
     public List<ItemDto> searchByText(String text, long userId) {
-        validateUserByUserId(userId);
         if (text == null || text.isBlank()) {
             return Collections.emptyList();
         }
         return itemRepository.findByText(text).stream()
-                .map(ItemMapper::mapToItemDto)
+                .map(mapper::toItemDto)
                 .toList();
 
     }
 
-    private void validateUserByUserId(long userId) {
-        if (!userRepository.existById(userId)) {
-            throw new NotFoundException("There is no user with id=" + userId);
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    public CommentDto createComment(CommentDto dto, long userId, long itemId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("There is no user with id=" + userId));
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("There is no item with id=" + itemId));
+
+        List<Booking> byBookerIdAndItemId = bookingRepository.findByBookerIdAndItemId(userId, itemId);
+
+        boolean hasPastBooking = byBookerIdAndItemId.stream()
+                .anyMatch(booking -> booking.getEnd().isBefore(LocalDateTime.now()));
+
+        if (hasPastBooking) {
+            Comment saved = commentRepository.save(mapper.toComment(dto, item, user));
+            return mapper.toCommentDto(saved);
+        } else {
+            throw new ValidationException("User has not ever booked item");
         }
     }
+
+    private static void updateNotNullFields(ItemUpdateDto itemDto, Item toUpdate) {
+        if (itemDto.getName() != null) {
+            toUpdate.setName(itemDto.getName());
+        }
+        if (itemDto.getDescription() != null) {
+            toUpdate.setDescription(itemDto.getDescription());
+        }
+        if (itemDto.getAvailable() != null) {
+            toUpdate.setAvailable(itemDto.getAvailable());
+        }
+    }
+
 }
+
