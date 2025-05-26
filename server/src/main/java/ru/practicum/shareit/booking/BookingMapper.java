@@ -10,6 +10,9 @@ import ru.practicum.shareit.booking.model.Booking;
 @Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true))
 public interface BookingMapper {
 
+    @Mapping(target = "item.comments", ignore = true)
+    @Mapping(target = "item.lastBooking", ignore = true)
+    @Mapping(target = "item.nextBooking", ignore = true)
     BookingDto toBookingDto(Booking booking);
 
     @Mapping(target = "item", ignore = true)

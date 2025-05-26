@@ -12,7 +12,8 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     @Query("""
             SELECT i FROM Item i
-                WHERE available = TRUE AND (i.name ILIKE %:text% OR i.description ILIKE %:text%)
+                WHERE available = TRUE AND (i.name ILIKE %:text% OR i.description ILIKE %:text%
+                )
             """)
     List<Item> findByText(@Param("text") String text);
 }
