@@ -59,6 +59,7 @@ public class ItemController {
         return found;
     }
 
+    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{itemId}/comment")
     public CommentDto postComment(@RequestBody CommentDto dto,
                                   @RequestHeader("X-Sharer-User-Id") long userId,
